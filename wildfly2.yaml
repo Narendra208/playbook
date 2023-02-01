@@ -1,0 +1,69 @@
+---
+ - name: install java
+   become: yes
+   hosts: all
+   tasks:
+     - name: Install openjdk-11
+       ansible.builtin.apt:
+         name: openjdk-11-jdk
+         state: present
+         update_cache: yes
+     - name: Ensure group wildfly
+       ansible.builtin.group:
+         name: group-wildfly
+         state: present
+     - name: wildfly
+       ansible.builtin.user:
+         name: wildfy
+         shell: /sbin/nologin
+         groups: wildfly
+         append: yes
+     - name: Download file of wildfly
+       ansible.builtin.get_url:
+         url: https://download.jboss.org/wildfly/22.0.1.Final/wildfly-22.0.1.Final.tar.gz
+         dest: /tmp
+     - name: Extract the WildFly
+       ansible.builtin.unarchive:
+         src: /tmp/wildfly-22.0.1.Final.tar.gz
+         dest: /opt/wildfly/
+         remote_src: yes
+     - name: copy files 
+       ansible.builtin.file:
+         path: /opt/wildfly/
+         owner: wildfly
+         group: wildfly
+         remote_src: yes
+     - name: Creating a directory
+       ansible.builtin.file:
+         path: /etc/wildfly
+         state: directory
+         mode: '777'
+     - name: copy the wildfly.conf
+       ansible.builtin.copy:
+         src: /opt/wildfly/docs/contrib/scripts/systemd/wildfly.conf
+         dest: /etc/wildfly/
+         remote_src: yes
+     - name: copy the launch.sh
+       ansible.builtin.copy:
+         src: /opt/wildfly/docs/contrib/scripts/systemd/launch.sh
+         dest: /opt/wildfly/bin/
+         remote_src: yes
+     - name: Create a directory
+       ansible.builtin.file:
+         path: /etc/wildfly
+         owner: wildfly
+         mode: '777'
+     - name:  copy the launch.sh
+       ansible.builtin.copy:
+         src: /opt/wildfly/docs/contrib/scripts/systemd/wildfly.service
+         dest: /etc/systemd/system/
+         remote_src: yes
+     - name: wildfly service unit is running and Enable
+       ansible.builtin.systemd:
+         name: wildfly
+         state: started
+         enabled: yes
+     - name: Start service wildfly, if not started
+       ansible.builtin.service:
+         name: wildfly
+         state: started

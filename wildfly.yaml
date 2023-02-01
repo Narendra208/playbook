@@ -1,0 +1,41 @@
+---
+ - name: install wildfly (jboss) on ubuntu
+   hosts: localhost
+   become: yes
+   tasks:
+     - name: java installation
+       ansible.builtin.apt:
+         name: openjdk-11-jdk
+         update_cache: yes
+         state: present
+     - name: create a wildfly group
+       ansible.builtin.group:
+         name: wildfly
+         state: present
+     - name: create a wildfly user
+       ansible.builtin.user:
+         name: wildfly
+         create_home: yes
+         group: wildfly
+         home: /opt/wildfly
+         shell: /sbin/nologin wildfly
+         state: present
+     - name: install wildfly
+       ansible.builtin.unarchive:
+         src: https://download.jboss.org/wildfly/16.0.0.Final/wildfly-16.0.0.Final.tar.gz
+         remote_src: yes
+         dest: /opt/wildfly
+     - name: create a symbolic link
+       ansible.builtin.file:
+         src: /opt/wildfly/wildfly-16.0.0.Final
+         dest: /opt/wildfly/latest
+         state: link
+     - name: change permissions
+       ansible.builtin.file:
+         dest: /opt/wildfly
+         recurse: true
+         owner: wildfly
+         group: wildfly
+         state: directory
+     
+

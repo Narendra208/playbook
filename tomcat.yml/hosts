@@ -1,0 +1,145 @@
+---
+ - name: install tomcat ubuntu
+   hosts: all 
+   become: yes
+   tasks: 
+     - name: java install
+       ansible.builtin.apt:
+          name: openjdk-11-jdk
+          update_cache: yes
+          state: present
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: java install
+       ansible.builtin.yum:
+          name: java-11-openjdk-devel
+          update_cache: yes
+          state: present
+       when: ansible_facts['distribution'] == "CentOS"
+     - name: user add
+       ansible.builtin.user:
+          name: tomcat
+          shell: /bin/false tomcat
+          home: /opt/tomcat
+          state: present
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: user add
+       ansible.builtin.user:
+          name: tomcat
+          shell: /bin/false tomcat
+          home: /opt/tomcat
+          state: present
+       when: ansible_facts['distribution'] == "CentOS"
+     - name: download tomcat
+       ansible.builtin.get_url:
+          url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.27/bin/apache-tomcat-10.0.27.tar.gz
+          dest: /tmp/apache-tomcat-10.0.27.tar.gz
+          mode: '8080'
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: download tomcat
+       ansible.builtin.get_url:
+          url: https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.27/bin/apache-tomcat-10.0.27.tar.gz
+          dest: /tmp/apache-tomcat-10.0.27.tar.gz
+          mode: '8080'
+       when: ansible_facts['distribution'] == "CentOS"
+     - name: extract file
+       ansible.builtin.unarchive:
+         src: /tmp/apache-tomcat-10.0.27.tar.gz
+         dest: /opt/tomcat/
+         remote_src: yes
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: Create a symbolic link
+       ansible.builtin.copy:
+         src: /opt/tomcat/apache-tomcat-10.0.27.tar.gz
+         dest: /opt/tomcat/latest
+         owner: tomcat
+         group: tomcat
+         remote_src: yes
+         state: link 
+       when: ansible_facts['distribution'] == "centos"
+     - name: Create a symbolic link
+       ansible.builtin.copy:
+         src: /opt/tomcat/apache-tomcat-10.0.27
+         dest: /opt/tomcat/latest
+         owner: tomcat
+         group: tomcat
+         state: link
+       when: ansible_facts['distribution'] == "CentOS"
+     - name: Change file ownership
+       ansible.builtin.file:
+          path: /opt/tomcat
+          owner: tomcat
+          group: tomcat
+          mode: '777'  
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: Change file ownership
+       ansible.builtin.file:
+          path: /opt/tomcat
+          owner: tomcat
+          group: tomcat
+          mode: '777'  
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: Change file ownership
+       ansible.builtin.file:
+          path: /opt/tomcat
+          owner: tomcat
+          group: tomcat
+          mode: '777'
+       when: ansible_facts['distribution'] == "CentOS" 
+     - name: Change file ownership
+       ansible.builtin.file:
+          path: /opt/tomcat/latest/bin/
+          owner: tomcat
+          group: tomcat
+          mode: '777'
+          recurse: yes
+       when: ansible_facts['distribution'] == "Ubuntu"
+     - name: Change file ownership
+       ansible.builtin.file:
+          path: /opt/tomcat/latest/bin/
+          owner: tomcat
+          group: tomcat
+          mode: '777'
+          recurse: yes
+      when: ansible_facts['distribution'] == "CentOS"
+    - name: edit the data in
+      ansible.builtin.blockinfile:
+        block: |
+          [Unit]
+          Description=Tomcat 10 servlet container
+          After=network.target
+
+          [Service]
+          Type=forking
+
+          User=tomcat
+          Group=tomcat
+
+          Environment="JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64"
+          Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom -Djava.awt.headless=true"
+
+          Environment="CATALINA_BASE=/opt/tomcat/latest"
+          Environment="CATALINA_HOME=/opt/tomcat/latest"
+          Environment="CATALINA_PID=/opt/tomcat/latest/temp/tomcat.pid"
+          Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+
+          ExecStart=/opt/tomcat/latest/bin/startup.sh
+          ExecStop=/opt/tomcat/latest/bin/shutdown.sh
+
+          [Install]
+          WantedBy=multi-user.target
+        path: /etc/systemd/system/tomcat.service
+      when: ansible_facts['distribution'] == "Ubuntu"
+    - name: reload daemon and start tomcat
+      ansible.builtin.systemd:
+        name: tomcat.service
+        daemon_reload: yes
+        enabled: yes
+        state: started
+      
+       
+
+     
+     
+        
+
+            

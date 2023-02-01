@@ -1,0 +1,82 @@
+---
+ - name: wildfly application
+   hosts: all
+   become: yes
+   tasks: 
+    - name: java install
+      ansible.builtin.yum:
+         name: java-11-openjdk-devel
+         update_cache: yes
+         state: present
+     - name: group add
+       ansible.builtin.group:
+         name: wildfly
+         state: present
+     - name: user add
+       ansible.builtin.user:
+         name: wildfly
+         home: /opt/wildfly -s
+         shell: /sbin/nologin wildfly
+         groups: wildfly
+         state: present
+     - name: tarfile
+       ansible.builtin.unarchive:
+         src: https://github.com/wildfly/wildfly/releases/download/27.0.1.Final/wildfly-27.0.1.Final.tar.gz
+         dest: /tmp
+         remote_src: yes
+     - name: changing the temp location file 
+       ansible.builtin.copy:
+         src: /tmp/wildfly-27.0.1.Final/
+         dest: /opt/wildfly
+         owner: wildfly
+         group: wildfly
+         mode: '777' 
+     - name: Change file ownership, group and permissions
+       ansible.builtin.file:
+         path: /opt/wildfly
+         owner: wildfly
+         group: wildfly
+         mode: '777'
+     - name: directory
+       ansible.builtin.file:
+         path: /etc/wildfly
+         owner: wildfly
+         group: wildfly
+         mode: '777'
+         state: directory 
+     - name: Copy file 
+       ansible.builtin.copy:
+         src: /opt/wildfly/docs/contrib/scripts/systemd/wildfly.conf
+         dest: /etc/wildfly/
+         owner: wildfly
+         group: wildfly
+         mode: '777'
+         remote_src: yes
+     - name: Copy file wildfly launch
+       ansible.builtin.copy:
+         src: /opt/wildfly/docs/contrib/scripts/systemd/launch.sh
+         dest: /opt/wildfly/bin/
+         owner: wildfly
+         group: wildfly
+         mode: '777'
+         remote_src: yes 
+     - name: Chmod 
+       ansible.builtin.file:
+         path: /opt/wildfly/bin/
+         owner: wildfly
+         group: wildfly
+         mode: '777' 
+     - name: copy system service
+       ansible.builtin.copy:
+         src: /opt/wildfly/docs/contrib/scripts/systemd/wildfly.service
+         dest: /etc/systemd/system/
+         owner: wildfly
+         group: wildfly
+         mode: '777'
+         remote_src: yes
+     - name: Start service httpd, if not started
+       ansible.builtin.service:
+         name: wildfly
+         state: started
+         enabled: yes    
+        
